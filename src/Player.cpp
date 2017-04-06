@@ -2151,7 +2151,7 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 		// we need this later if we are autosyncing
 		const float fStepBeat = NoteRowToBeat( iRowOfOverlappingNoteOrRow );
 		const float fStepSeconds = TIMING_FUDGING ? 
-		float(round(150.0 * (round( 60.0 * double(m_Timing->GetElapsedTimeFromBeat(fStepBeat)))/60.0)) / 150.0)
+		float(round(60.0 * (round( 150.0 * double(m_Timing->GetElapsedTimeFromBeat(fStepBeat)))/150.0)) / 60.0)
                     : m_Timing->GetElapsedTimeFromBeat(fStepBeat);
 
 		if( row == -1 )
