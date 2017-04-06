@@ -195,6 +195,7 @@ ThemeMetric<bool> AVOID_MINE_INCREMENTS_COMBO	( "Gameplay", "AvoidMineIncrements
  * If set to true, every mine stepped on will break the combo and increment the miss combo.
  * If set to false, stepping on a mine will not affect the combo. */
 ThemeMetric<bool> MINE_HIT_INCREMENTS_MISS_COMBO	( "Gameplay", "MineHitIncrementsMissCombo" );
+ThemeMetric<bool> TIMING_FUDGING    ( "Gameplay", "TimingFudging" );
 /**
  * @brief Are checkpoints and taps considered separate judgments?
  *
@@ -2149,7 +2150,9 @@ void Player::Step( int col, int row, const RageTimer &tm, bool bHeld, bool bRele
 		float fNoteOffset = 0.0f;
 		// we need this later if we are autosyncing
 		const float fStepBeat = NoteRowToBeat( iRowOfOverlappingNoteOrRow );
-		const float fStepSeconds = m_Timing->GetElapsedTimeFromBeat(fStepBeat);
+		const float fStepSeconds = TIMING_FUDGING ? 
+		float(round(150.0 * (round( 60.0 * double(m_Timing->GetElapsedTimeFromBeat(fStepBeat)))/60.0)) / 150.0)
+                    : m_Timing->GetElapsedTimeFromBeat(fStepBeat);
 
 		if( row == -1 )
 		{
