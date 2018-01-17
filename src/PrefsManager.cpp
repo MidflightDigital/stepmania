@@ -77,26 +77,16 @@ XToString( ShowDancingCharacters );
 StringToX( ShowDancingCharacters );
 LuaXType( ShowDancingCharacters );
 
-static const char *BannerCacheModeNames[] = {
+static const char *ImageCacheModeNames[] = {
 	"Off",
 	"LowResPreload",
 	"LowResLoadOnDemand",
 	"Full"
 };
-XToString( BannerCacheMode );
-StringToX( BannerCacheMode );
-LuaXType( BannerCacheMode );
-/*
-static const char *BackgroundCacheModeNames[] = {
-	"Off",
-	"LowResPreload",
-	"LowResLoadOnDemand",
-	"Full"
-};
-XToString( BackgroundCacheMode );
-StringToX( BackgroundCacheMode );
-LuaXType( BackgroundCacheMode );
-*/
+XToString( ImageCacheMode );
+StringToX( ImageCacheMode );
+LuaXType( ImageCacheMode );
+
 static const char *HighResolutionTexturesNames[] = {
 	"Auto",
 	"ForceOff",
@@ -166,6 +156,7 @@ PrefsManager::PrefsManager() :
 	m_sDefaultModifiers		( "DefaultModifiers",		"" ),
 
 	m_bWindowed			( "Windowed",			true ),
+	m_sDisplayId			( "DisplayId", "" ),
 	m_iDisplayWidth			( "DisplayWidth",		854 ),
 	m_iDisplayHeight		( "DisplayHeight",		480 ),
 	m_fDisplayAspectRatio		( "DisplayAspectRatio",		16/9.f, ValidateDisplayAspectRatio ),
@@ -178,6 +169,7 @@ PrefsManager::PrefsManager() :
 	m_iMaxTextureResolution		( "MaxTextureResolution",	2048 ),
 	m_iRefreshRate			( "RefreshRate",		REFRESH_DEFAULT ),
 	m_bAllowMultitexture		( "AllowMultitexture",		true ),
+	m_bFullscreenIsBorderlessWindow( "FullscreenIsBorderlessWindow", false ),
 	m_bShowStats			( "ShowStats",			TRUE_IF_DEBUG),
 	m_bShowBanners			( "ShowBanners",		true ),
 	m_bShowMouseCursor		( "ShowMouseCursor",		true ),
@@ -189,8 +181,7 @@ PrefsManager::PrefsManager() :
 	m_bPAL				( "PAL",			false ),
 	m_bDelayedTextureDelete		( "DelayedTextureDelete",	false ),
 	m_bDelayedModelDelete		( "DelayedModelDelete",		false ),
-	m_BannerCache			( "BannerCache",		BNCACHE_LOW_RES_PRELOAD ),
-	//m_BackgroundCache		( "BackgroundCache",		BGCACHE_LOW_RES_PRELOAD ),
+	m_ImageCache			( "ImageCache",		IMGCACHE_LOW_RES_PRELOAD ),
 	m_bFastLoad			( "FastLoad",			true ),
 	m_bFastLoadAdditionalSongs      ( "FastLoadAdditionalSongs",    true ),
 	m_NeverCacheList		( "NeverCacheList", ""),
@@ -228,7 +219,6 @@ PrefsManager::PrefsManager() :
 	m_AllowMultipleToasties		("AllowMultipleToasties",	true ),
 	m_MinTNSToHideNotes		("MinTNSToHideNotes",		TNS_W3 ),
 	m_ShowSongOptions		( "ShowSongOptions",		Maybe_NO ),
-	m_bDancePointsForOni		( "DancePointsForOni",		true ),
 	m_bPercentageScoring		( "PercentageScoring",		false ),
 	// Wow, these preference names are *seriously* long -Colby
 	m_fMinPercentageForMachineSongHighScore		( "MinPercentageForMachineSongHighScore",	0.0001f ), // This is for home, who cares how bad you do?
@@ -298,6 +288,12 @@ PrefsManager::PrefsManager() :
 	m_bAllowSongDeletion		( "AllowSongDeletion",			false ),
 
 	m_bQuirksMode			( "QuirksMode",		false ),
+
+	m_custom_songs_enable("CustomSongsEnable", false),
+	m_custom_songs_max_count("CustomSongsMaxCount", 1000), // No limit. -- 2 Unlimited
+	m_custom_songs_load_timeout("CustomSongsLoadTimeout", 5.f),
+	m_custom_songs_max_seconds("CustomSongsMaxSeconds", 120.f),
+	m_custom_songs_max_megabytes("CustomSongsMaxMegabytes", 5.f),
 
 	/* Debug: */
 	m_bLogToDisk			( "LogToDisk",		true ),
@@ -374,7 +370,7 @@ void PrefsManager::StoreGamePrefs()
 	ASSERT( !m_sCurrentGame.Get().empty() );
 
 	// save off old values
-	GamePrefs &gp = m_mapGameNameToGamePrefs[m_sCurrentGame];
+	GamePrefs &gp = m_mapGameNameToGamePrefs[m_sCurrentGame.Get()];
 	gp.m_sAnnouncer = m_sAnnouncer;
 	gp.m_sTheme = m_sTheme;
 	gp.m_sDefaultModifiers = m_sDefaultModifiers;

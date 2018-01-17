@@ -67,14 +67,14 @@ t[#t+1] = Def.ActorFrame {
 		OnCommand=THEME:GetMetric("Protiming","ProtimingOnCommand");
 		ResetCommand=cmd(finishtweening;stopeffect;visible,false);
 	};
-	LoadFont("Common Normal") .. {
+	LoadFont("Common Condensed") .. {
 		Name="ProtimingAverage";
 		Text="";
 		InitCommand=cmd(visible,false);
 		OnCommand=THEME:GetMetric("Protiming","AverageOnCommand");
 		ResetCommand=cmd(finishtweening;stopeffect;visible,false);
 	};
-	LoadFont("Common Normal") .. {
+	LoadFont("Common Condensed") .. {
 		Name="TextDisplay";
 		Text=THEME:GetString("Protiming","MS");
 		InitCommand=cmd(visible,false);

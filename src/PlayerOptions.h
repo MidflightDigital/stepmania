@@ -37,6 +37,19 @@ const RString& DrainTypeToString( DrainType cat );
 const RString& DrainTypeToLocalizedString( DrainType cat );
 LuaDeclareType( DrainType );
 
+enum ModTimerType
+{
+	ModTimerType_Game,
+	ModTimerType_Beat,
+	ModTimerType_Song,
+	ModTimerType_Default,
+	NUM_ModTimerType,
+	ModTimerType_Invalid
+};
+const RString& ModTimerTypeToString( ModTimerType cat );
+const RString& ModTimerTypeToLocalizedString( ModTimerType cat );
+LuaDeclareType( ModTimerType );
+
 /** @brief Per-player options that are not saved between sessions. */
 class PlayerOptions
 {
@@ -46,6 +59,7 @@ public:
 	 *
 	 * This code was taken from Init() to use proper initialization. */
 	PlayerOptions(): m_LifeType(LifeType_Bar), m_DrainType(DrainType_Normal),
+		m_ModTimerType(ModTimerType_Default),
 		m_BatteryLives(4),
 		m_bSetScrollSpeed(false),
 		m_fTimeSpacing(0), m_SpeedfTimeSpacing(1.0f),
@@ -62,7 +76,14 @@ public:
 		m_fSkew(0), m_SpeedfSkew(1.0f),
 		m_fPassmark(0), m_SpeedfPassmark(1.0f),
 		m_fRandomSpeed(0), m_SpeedfRandomSpeed(1.0f),
+		m_fModTimerMult(0), m_SpeedfModTimerMult(1.0f),
+		m_fModTimerOffset(0), m_SpeedfModTimerOffset(1.0f),
+		m_fDrawSize(0), m_SpeedfDrawSize(1.0f),
+		m_fDrawSizeBack(0), m_SpeedfDrawSizeBack(1.0f),
 		m_bMuteOnError(false), m_FailType(FailType_Immediate),
+		m_bStealthType(false), m_bStealthPastReceptors(false),
+		m_bDizzyHolds(false), m_bZBuffer(false),
+		m_bCosecant(false),
 		m_MinTNSToHideNotes(PREFSMAN->m_MinTNSToHideNotes)
 	{
 		m_sNoteSkin = "";
@@ -74,6 +95,14 @@ public:
 		ZERO( m_fMovesX );	ONE( m_SpeedfMovesX );
 		ZERO( m_fMovesY );	ONE( m_SpeedfMovesY );
 		ZERO( m_fMovesZ );	ONE( m_SpeedfMovesZ );
+		ZERO( m_fConfusionX );	ONE( m_SpeedfConfusionX );
+		ZERO( m_fConfusionY );	ONE( m_SpeedfConfusionY );
+		ZERO( m_fConfusionZ );	ONE( m_SpeedfConfusionZ );
+		ZERO( m_fDarks );	ONE( m_SpeedfDarks );
+		ZERO( m_fStealth );	ONE( m_SpeedfStealth );
+		ZERO( m_fTiny );	ONE( m_SpeedfTiny );
+		ZERO( m_fBumpy );	ONE( m_SpeedfBumpy );
+		ZERO( m_fReverse );	ONE( m_SpeedfReverse );
 	};
 	void Init();
 	void Approach( const PlayerOptions& other, float fDeltaSeconds );
@@ -109,6 +138,8 @@ public:
 		ACCEL_WAVE_PERIOD,
 		ACCEL_EXPAND,
 		ACCEL_EXPAND_PERIOD,
+		ACCEL_TAN_EXPAND,
+		ACCEL_TAN_EXPAND_PERIOD,
 		ACCEL_BOOMERANG, /**< The arrows start from above the targets, go down, then come back up. */
 		NUM_ACCELS
 	};
@@ -117,13 +148,40 @@ public:
 		EFFECT_DRUNK_SPEED,
 		EFFECT_DRUNK_OFFSET,
 		EFFECT_DRUNK_PERIOD,
+		EFFECT_TAN_DRUNK,
+		EFFECT_TAN_DRUNK_SPEED,
+		EFFECT_TAN_DRUNK_OFFSET,
+		EFFECT_TAN_DRUNK_PERIOD,
+		EFFECT_DRUNK_Z,
+		EFFECT_DRUNK_Z_SPEED,
+		EFFECT_DRUNK_Z_OFFSET,
+		EFFECT_DRUNK_Z_PERIOD,
+		EFFECT_TAN_DRUNK_Z,
+		EFFECT_TAN_DRUNK_Z_SPEED,
+		EFFECT_TAN_DRUNK_Z_OFFSET,
+		EFFECT_TAN_DRUNK_Z_PERIOD,
 		EFFECT_DIZZY,
+		EFFECT_ATTENUATE_X,
+		EFFECT_ATTENUATE_Y,
+		EFFECT_ATTENUATE_Z,
+		EFFECT_SHRINK_TO_MULT,
+		EFFECT_SHRINK_TO_LINEAR,
+		EFFECT_PULSE_INNER,
+		EFFECT_PULSE_OUTER,
+		EFFECT_PULSE_OFFSET,
+		EFFECT_PULSE_PERIOD,
 		EFFECT_CONFUSION,
 		EFFECT_CONFUSION_OFFSET,
 		EFFECT_CONFUSION_X,
 		EFFECT_CONFUSION_X_OFFSET,
 		EFFECT_CONFUSION_Y,
 		EFFECT_CONFUSION_Y_OFFSET,
+		EFFECT_BOUNCE,
+		EFFECT_BOUNCE_PERIOD,
+		EFFECT_BOUNCE_OFFSET,
+		EFFECT_BOUNCE_Z,
+		EFFECT_BOUNCE_Z_PERIOD,
+		EFFECT_BOUNCE_Z_OFFSET,
 		EFFECT_MINI,
 		EFFECT_TINY,
 		EFFECT_FLIP,
@@ -131,16 +189,80 @@ public:
 		EFFECT_TORNADO,
 		EFFECT_TORNADO_PERIOD,
 		EFFECT_TORNADO_OFFSET,
+		EFFECT_TAN_TORNADO,
+		EFFECT_TAN_TORNADO_PERIOD,
+		EFFECT_TAN_TORNADO_OFFSET,
+		EFFECT_TORNADO_Z,
+		EFFECT_TORNADO_Z_PERIOD,
+		EFFECT_TORNADO_Z_OFFSET,
+		EFFECT_TAN_TORNADO_Z,
+		EFFECT_TAN_TORNADO_Z_PERIOD,
+		EFFECT_TAN_TORNADO_Z_OFFSET,
 		EFFECT_TIPSY,
 		EFFECT_TIPSY_SPEED,
 		EFFECT_TIPSY_OFFSET,
+		EFFECT_TAN_TIPSY,
+		EFFECT_TAN_TIPSY_SPEED,
+		EFFECT_TAN_TIPSY_OFFSET,
 		EFFECT_BUMPY,
 		EFFECT_BUMPY_OFFSET,
 		EFFECT_BUMPY_PERIOD,
+		EFFECT_TAN_BUMPY,
+		EFFECT_TAN_BUMPY_OFFSET,
+		EFFECT_TAN_BUMPY_PERIOD,
+		EFFECT_BUMPY_X,
+		EFFECT_BUMPY_X_OFFSET,
+		EFFECT_BUMPY_X_PERIOD,
+		EFFECT_TAN_BUMPY_X,
+		EFFECT_TAN_BUMPY_X_OFFSET,
+		EFFECT_TAN_BUMPY_X_PERIOD,
 		EFFECT_BEAT,
 		EFFECT_BEAT_OFFSET,
 		EFFECT_BEAT_PERIOD,
 		EFFECT_BEAT_MULT,
+		EFFECT_BEAT_Y,
+		EFFECT_BEAT_Y_OFFSET,
+		EFFECT_BEAT_Y_PERIOD,
+		EFFECT_BEAT_Y_MULT,
+		EFFECT_BEAT_Z,
+		EFFECT_BEAT_Z_OFFSET,
+		EFFECT_BEAT_Z_PERIOD,
+		EFFECT_BEAT_Z_MULT,
+		EFFECT_DIGITAL,
+		EFFECT_DIGITAL_STEPS,
+		EFFECT_DIGITAL_PERIOD,
+		EFFECT_DIGITAL_OFFSET,
+		EFFECT_TAN_DIGITAL,
+		EFFECT_TAN_DIGITAL_STEPS,
+		EFFECT_TAN_DIGITAL_PERIOD,
+		EFFECT_TAN_DIGITAL_OFFSET,
+		EFFECT_DIGITAL_Z,
+		EFFECT_DIGITAL_Z_STEPS,
+		EFFECT_DIGITAL_Z_PERIOD,
+		EFFECT_DIGITAL_Z_OFFSET,
+		EFFECT_TAN_DIGITAL_Z,
+		EFFECT_TAN_DIGITAL_Z_STEPS,
+		EFFECT_TAN_DIGITAL_Z_PERIOD,
+		EFFECT_TAN_DIGITAL_Z_OFFSET,
+		EFFECT_ZIGZAG,
+		EFFECT_ZIGZAG_PERIOD,
+		EFFECT_ZIGZAG_OFFSET,
+		EFFECT_ZIGZAG_Z,
+		EFFECT_ZIGZAG_Z_PERIOD,
+		EFFECT_ZIGZAG_Z_OFFSET,
+		EFFECT_SAWTOOTH,
+		EFFECT_SAWTOOTH_PERIOD,
+		EFFECT_SAWTOOTH_Z,
+		EFFECT_SAWTOOTH_Z_PERIOD,
+		EFFECT_SQUARE,
+		EFFECT_SQUARE_PERIOD,
+		EFFECT_SQUARE_OFFSET,
+		EFFECT_SQUARE_Z,
+		EFFECT_SQUARE_Z_PERIOD,
+		EFFECT_SQUARE_Z_OFFSET,
+		EFFECT_PARABOLA_X,
+		EFFECT_PARABOLA_Y,
+		EFFECT_PARABOLA_Z,
 		EFFECT_XMODE,
 		EFFECT_TWIRL,
 		EFFECT_ROLL,
@@ -210,6 +332,7 @@ public:
 
 	LifeType m_LifeType;
 	DrainType m_DrainType;	// only used with LifeBar
+	ModTimerType m_ModTimerType;
 	int m_BatteryLives;
 	/* All floats have a corresponding speed setting, which determines how fast
 	 * PlayerOptions::Approach approaches. */
@@ -236,14 +359,31 @@ public:
 	float		m_fPassmark,			m_SpeedfPassmark;
 
 	float	m_fRandomSpeed,			m_SpeedfRandomSpeed;
+	float	m_fModTimerMult,		m_SpeedfModTimerMult;
+	float	m_fModTimerOffset,		m_SpeedfModTimerOffset;
+	float	m_fDrawSize,			m_SpeedfDrawSize;
+	float	m_fDrawSizeBack,		m_SpeedfDrawSizeBack;
 	/* The maximum column number is 16.*/
 	float	m_fMovesX[16],			m_SpeedfMovesX[16];
 	float	m_fMovesY[16],			m_SpeedfMovesY[16];
 	float	m_fMovesZ[16],			m_SpeedfMovesZ[16];
+	float	m_fConfusionX[16],		m_SpeedfConfusionX[16];
+	float	m_fConfusionY[16],		m_SpeedfConfusionY[16];
+	float	m_fConfusionZ[16],		m_SpeedfConfusionZ[16];
+	float	m_fDarks[16],			m_SpeedfDarks[16];
+	float	m_fStealth[16],			m_SpeedfStealth[16];
+	float	m_fTiny[16],			m_SpeedfTiny[16];
+	float	m_fBumpy[16],			m_SpeedfBumpy[16];
+	float	m_fReverse[16],			m_SpeedfReverse[16];
 
 	bool		m_bTurns[NUM_TURNS];
 	bool		m_bTransforms[NUM_TRANSFORMS];
 	bool		m_bMuteOnError;
+	bool		m_bStealthType;
+	bool		m_bStealthPastReceptors;
+	bool		m_bDizzyHolds;
+	bool		m_bZBuffer;
+	bool		m_bCosecant;
 	/** @brief The method for which a player can fail a song. */
 	FailType m_FailType;
 	TapNoteScore m_MinTNSToHideNotes;

@@ -54,8 +54,7 @@
 #include "InputMapper.h"
 #include "InputQueue.h"
 #include "SongCacheIndex.h"
-#include "BannerCache.h"
-//#include "BackgroundCache.h"
+#include "ImageCache.h"
 #include "UnlockManager.h"
 #include "RageFileManager.h"
 #include "Bookkeeper.h"
@@ -96,7 +95,8 @@ void StepMania::GetPreferredVideoModeParams( VideoModeParams &paramsOut )
 	}
 
 	paramsOut = VideoModeParams(
-		PREFSMAN->m_bWindowed,
+		PREFSMAN->m_bWindowed || PREFSMAN->m_bFullscreenIsBorderlessWindow,
+		PREFSMAN->m_sDisplayId,
 		iWidth,
 		PREFSMAN->m_iDisplayHeight,
 		PREFSMAN->m_iDisplayColorDepth,
@@ -106,6 +106,7 @@ void StepMania::GetPreferredVideoModeParams( VideoModeParams &paramsOut )
 		PREFSMAN->m_bSmoothLines,
 		PREFSMAN->m_bTrilinearFiltering,
 		PREFSMAN->m_bAnisotropicFiltering,
+		!PREFSMAN->m_bWindowed && PREFSMAN->m_bFullscreenIsBorderlessWindow,
 		CommonMetrics::WINDOW_TITLE,
 		THEME->GetPathG("Common","window icon"),
 		PREFSMAN->m_bPAL,
@@ -146,7 +147,13 @@ static void StoreActualGraphicOptions()
 	 * we don't go through the process of auto-detecting a usable video mode
 	 * every time. */
 	const VideoModeParams &params = DISPLAY->GetActualVideoModeParams();
-	PREFSMAN->m_bWindowed.Set( params.windowed );
+	PREFSMAN->m_bWindowed.Set( params.windowed && !params.bWindowIsFullscreenBorderless );
+	if (!params.windowed && !params.bWindowIsFullscreenBorderless) {
+		// In all other cases, want to preserve the value of this preference,
+		// but if DISPLAY decides to go fullscreen exclusive, we'll persist that decision
+		PREFSMAN->m_bFullscreenIsBorderlessWindow.Set( false );
+	}
+
 
 	/* If we're windowed, we may have tweaked the width based on the aspect ratio.
 	 * Don't save this new value over the preferred value. */
@@ -296,8 +303,7 @@ void ShutdownGame()
 	SAFE_DELETE( CRYPTMAN );
 	SAFE_DELETE( MEMCARDMAN );
 	SAFE_DELETE( SONGMAN );
-	SAFE_DELETE( BANNERCACHE );
-	//SAFE_DELETE( BACKGROUNDCACHE );
+	SAFE_DELETE( IMAGECACHE );
 	SAFE_DELETE( SONGINDEX );
 	SAFE_DELETE( SOUND ); // uses GAMESTATE, PREFSMAN
 	SAFE_DELETE( PREFSMAN );
@@ -406,9 +412,7 @@ static void AdjustForChangedSystemCapabilities()
 	/* Preloaded banners takes about 9k per song. Although it's smaller than the
 	 * actual song data, it still adds up with a lot of songs.
 	 * Disable it for 64-meg systems. */
-	PREFSMAN->m_BannerCache.Set( LowMemory ? BNCACHE_OFF:BNCACHE_LOW_RES_PRELOAD );
-	// might wanna do this for backgrounds, too... -aj
-	//PREFSMAN->m_BackgroundCache.Set( LowMemory ? BGCACHE_OFF:BGCACHE_LOW_RES_PRELOAD );
+	PREFSMAN->m_ImageCache.Set( LowMemory ? IMGCACHE_OFF:IMGCACHE_LOW_RES_PRELOAD );
 
 	PREFSMAN->SavePrefsToDisk();
 #endif
@@ -1147,8 +1151,7 @@ int sm_main(int argc, char* argv[])
 
 	INPUTQUEUE	= new InputQueue;
 	SONGINDEX	= new SongCacheIndex;
-	BANNERCACHE	= new BannerCache;
-	//BACKGROUNDCACHE	= new BackgroundCache;
+	IMAGECACHE	= new ImageCache;
 
 	// depends on SONGINDEX:
 	SONGMAN		= new SongManager;
